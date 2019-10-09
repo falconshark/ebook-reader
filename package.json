@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "datauri": "^2.0.0",
     "epubjs": "^0.3.85",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",

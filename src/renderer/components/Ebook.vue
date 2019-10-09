@@ -1,13 +1,19 @@
 <template>
   <div id="wrapper">
     <main>
-      <div class="welcomeMessage" v-if="!bookPath">
+      <div class="welcomeMessage" v-if="!book">
         <h1 class="header-title">Happy Ebook Reader</h1>
         <img class="logo img-fluid" src="../assets/logo.png">
         <div class="btn btn-primary" v-on:click="selectBook">Read Book</div>
       </div>
       <div id="book" />
-      <div v-if="!bookPath" class="credit">Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a></div>
+      <div class="control-bar prev" v-on:click="prev">
+        <div v-if="book" class="control-icon"><i class="fa fa-arrow-left" aria-hidden="true"></i></div>
+      </div>
+      <div class="control-bar next" v-on:click="next">
+        <div v-if="book" class="control-icon"><i class="fa fa-arrow-right" aria-hidden="true"></i></div>
+      </div>
+      <div v-if="!book" class="credit">Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a></div>
     </main>
   </div>
 </template>
@@ -15,31 +21,41 @@
 <script>
 import ePub from 'epubjs';
 import fs from 'fs';
-import Datauri from 'datauri';
 export default {
   name: 'ebook',
+  created(){
+    this.$electron.remote
+  },
   data(){
     return{
-      'bookPath': null,
+      'book': null,
     }
   },
   methods: {
     async selectBook(){
-      const datauri = Datauri.promise;
       const dialog = this.$electron.remote.dialog;
       const files = dialog.showOpenDialog({properties: ['openFile', 'openDirectory']});
       const bookPath = files[0];
-      this.bookPath = bookPath;
       const bookFile = fs.readFileSync(bookPath);
       const bookBase64 = new Buffer(bookFile).toString('base64');
       const book = ePub(bookBase64, { encoding: "base64" });
-      const rendition = book.renderTo('book');
+      const rendition = book.renderTo('book', {flow: 'paginated'});
+      this.book = rendition;
       rendition.display();
+    },
+    next(){
+      this.book.next();
+    },
+    prev(){
+      this.book.prev();
     },
   }
 }
 </script>
 <style lang="scss" scoped>
+#wrapper{
+  position: relative;
+}
 .welcomeMessage{
   display: flex;
   flex-direction: column;
@@ -64,5 +80,29 @@ export default {
 .credit{
   text-align: center;
   margin-bottom: 0.5em;
+}
+.control-bar{
+  position: absolute;
+  height: 100vh;
+  top:0;
+  opacity: 0;
+  width: 50px;
+  transition: all 0.1s;
+  &:hover{
+    opacity: 1;
+  }
+  &.prev{
+    left: 0;
+  }
+  &.next{
+    right: 0;
+  }
+}
+.control-icon{
+  font-size: 40px;
+  position: absolute;
+  top: 50%;
+  margin-left: 10px;
+  opacity: 0.5;
 }
 </style>
