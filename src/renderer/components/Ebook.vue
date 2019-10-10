@@ -24,7 +24,11 @@ import fs from 'fs';
 export default {
   name: 'ebook',
   created(){
-    this.$electron.remote
+    const ipcMain = this.$electron.remote.ipcMain;
+    ipcMain.on('open-book', () => {
+      this.selectBook();
+    });
+    this.initMenu();
   },
   data(){
     return{
@@ -32,6 +36,49 @@ export default {
     }
   },
   methods: {
+    initMenu(){
+      const BrowserWindow = this.$electron.remote.getCurrentWindow();
+      const ipcRenderer = this.$electron.ipcRenderer;
+      const Menu = this.$electron.remote.Menu;
+      const menuTree = Menu.buildFromTemplate([
+        {
+          label: "Ebook Reader",
+          submenu: [
+            {
+              label: "About",
+              accelerator: "CmdOrCtrl+,",
+              click: () => {
+                ipcRenderer.send("toggle-about");
+              }
+            },
+            { type: "separator" },
+            {
+              label: "Open File" ,
+              click: () => {
+                ipcRenderer.send('open-book');
+              }
+            },
+            { type: "separator" },
+            {
+              label: "Quit",
+              accelerator: "CmdOrCtrl+Q"
+            },
+          ]
+        },
+        {
+          label: "Window",
+          submenu: [
+            {
+              label: "Always On Top",
+              click: () => {
+                BrowserWindow.setAlwaysOnTop(true);
+              }
+            },
+          ]
+        },
+      ]);
+      Menu.setApplicationMenu(menuTree);
+    },
     async selectBook(){
       const dialog = this.$electron.remote.dialog;
       const files = dialog.showOpenDialog({properties: ['openFile', 'openDirectory']});
