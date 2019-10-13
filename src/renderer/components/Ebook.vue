@@ -19,6 +19,7 @@
 </template>
 
 <script>
+import Store from 'electron-store';
 import ePub from 'epubjs';
 import fs from 'fs';
 export default {
@@ -31,8 +32,10 @@ export default {
     this.initMenu();
   },
   data(){
+    const store = new Store();
     return{
       'book': null,
+      store,
     }
   },
   methods: {
@@ -44,14 +47,6 @@ export default {
         {
           label: "Ebook Reader",
           submenu: [
-            {
-              label: "About",
-              accelerator: "CmdOrCtrl+,",
-              click: () => {
-                ipcRenderer.send("toggle-about");
-              }
-            },
-            { type: "separator" },
             {
               label: "Open File" ,
               click: () => {
@@ -70,9 +65,12 @@ export default {
           submenu: [
             {
               label: "Always On Top",
-              click: () => {
-                BrowserWindow.setAlwaysOnTop(true);
-              }
+              type: 'checkbox',
+              click: (e) => {
+                this.store.set('options.alwaysOnTop', e.checked);
+                BrowserWindow.setAlwaysOnTop(e.checked);
+              },
+              checked: this.store.get('options.alwaysOnTop'),
             },
           ]
         },
