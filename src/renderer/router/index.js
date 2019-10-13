@@ -11,6 +11,11 @@ export default new Router({
       component: require('@/components/Ebook').default
     },
     {
+      path: '/preferences',
+      name: 'Preferences',
+      component: require('@/components/Preferences').default
+    },
+    {
       path: '*',
       redirect: '/'
     }

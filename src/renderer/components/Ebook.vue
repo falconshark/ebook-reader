@@ -13,15 +13,20 @@
       <div class="control-bar next" v-on:click="next">
         <div v-if="book" class="control-icon"><i class="fa fa-arrow-right" aria-hidden="true"></i></div>
       </div>
-      <div v-if="!book" class="credit">Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a></div>
+      <div v-if="!book" class="credit">
+        Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a></div>
     </main>
   </div>
 </template>
 
 <script>
+import path from 'path';
+import openAboutWindow from 'about-window';
 import Store from 'electron-store';
 import ePub from 'epubjs';
 import fs from 'fs';
+
+const store = new Store();
 export default {
   name: 'ebook',
   created(){
@@ -29,10 +34,12 @@ export default {
     ipcMain.on('open-book', () => {
       this.selectBook();
     });
+    ipcMain.on('open-preferences', () => {
+      this.openPreferences();
+    });
     this.initMenu();
   },
   data(){
-    const store = new Store();
     return{
       'book': null,
       store,
@@ -48,15 +55,66 @@ export default {
           label: "Ebook Reader",
           submenu: [
             {
+              label: "About Happy Book Reader" ,
+              click: () => {
+                openAboutWindow({
+                  icon_path: path.resolve(__dirname, '../../../build/icons/256x256.png'),
+                  copyright: 'Copyright (c) 2019 Mr.Twister',
+                  package_json_dir: path.resolve(__dirname, '../../../'),
+                  open_devtools: process.env.NODE_ENV !== 'production',
+                  win_options: {
+                    webPreferences: {
+                      nodeIntegration: true
+                    }
+                  }
+                })
+              }
+            },
+            {
+              type: 'separator'
+            },
+            {
+              label: "Preferences",
+              accelerator: 'CmdOrCtrl+,',
+              click: () => {
+                ipcRenderer.send('open-preferences');
+              }
+            },
+            { type: "separator" },
+            {
+              label: "Hide Happy Book Reader" ,
+              role: 'hide',
+            },
+            { type: "separator" },
+            {
+              label: "Quit",
+              accelerator: "CmdOrCtrl+Q",
+              role: "quit",
+            },
+          ]
+        },
+        {
+          label: "File",
+          submenu: [
+            {
               label: "Open File" ,
               click: () => {
                 ipcRenderer.send('open-book');
               }
             },
-            { type: "separator" },
+          ]
+        },
+        {
+          label: "Control",
+          submenu: [
             {
-              label: "Quit",
-              accelerator: "CmdOrCtrl+Q"
+              label: "Auto Reading",
+              type: 'checkbox',
+              click: (e) => {
+                this.store.set('options.autoRading', e.checked);
+                BrowserWindow.setAlwaysOnTop(e.checked);
+              },
+              checked: this.store.get('options.autoRading'),
             },
           ]
         },
@@ -71,6 +129,16 @@ export default {
                 BrowserWindow.setAlwaysOnTop(e.checked);
               },
               checked: this.store.get('options.alwaysOnTop'),
+            },
+            { type: "separator" },
+            {
+              label: "Minimize",
+              role: "minimize",
+            },
+            {type: "separator"},
+            {
+              label: "Close",
+              role: "close"
             },
           ]
         },
@@ -93,6 +161,19 @@ export default {
     },
     prev(){
       this.book.prev();
+    },
+    openPreferences(){
+      const modalPath = process.env.NODE_ENV === 'development'
+      ? 'http://localhost:9080/#/preferences'
+      : `file://${__dirname}/index.html#preferences`
+      const BrowserWindow = this.$electron.remote.BrowserWindow;
+      let win = new BrowserWindow({
+        height: 600,
+        width: 800,
+        webPreferences: {webSecurity: false}
+      });
+      win.on('close', function () { win = null })
+      win.loadURL(modalPath);
     },
   }
 }
