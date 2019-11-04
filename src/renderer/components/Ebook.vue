@@ -153,6 +153,9 @@ export default {
       const bookBase64 = new Buffer(bookFile).toString('base64');
       const book = ePub(bookBase64, { encoding: "base64" });
       const rendition = book.renderTo('book', {flow: 'paginated'});
+      if(this.book){
+        this.book.destroy(); // Destroy old book   
+      }
       this.book = rendition;
       rendition.display();
     },
